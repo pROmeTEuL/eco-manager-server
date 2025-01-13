@@ -67,7 +67,7 @@ void incrementUsage()
         if (data.electricity == Util::ON) {
             data.kilowatz += 1;
         }
-        printf("%d l\n%d mc\n%d kw\n", data.litres, data.mc, data.kilowatz);
+        // printf("%d l\n%d mc\n%d kw\n", data.litres, data.mc, data.kilowatz);
         lock.unlock();
         std::this_thread::sleep_for(std::chrono::seconds(3));
         lock.lock();

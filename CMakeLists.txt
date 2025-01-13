@@ -10,7 +10,7 @@ include(FetchContent)
 FetchContent_Declare(
   crowcpp-crow
   GIT_REPOSITORY https://github.com/CrowCpp/Crow.git
-  GIT_TAG v1.0
+  GIT_TAG v1.2.1.0
 )
 
 FetchContent_MakeAvailable(crowcpp-crow)
@@ -25,8 +25,7 @@ FetchContent_MakeAvailable(nlohmann_json)
 add_executable(resurse-naturale-server  main.cpp
 )
 
-target_link_libraries(resurse-naturale-server PRIVATE Crow)
-target_include_directories(resurse-naturale-server PRIVATE ${nlohmann_json_SOURCE_DIR}/include)
+target_link_libraries(resurse-naturale-server PRIVATE Crow::Crow nlohmann_json::nlohmann_json)
 
 include(GNUInstallDirs)
 install(TARGETS resurse-naturale-server

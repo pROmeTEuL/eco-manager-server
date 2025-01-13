@@ -53,11 +53,11 @@ void change(Util &util, const char* status)
 }
 
 std::mutex mtx;
-
+std::atomic_bool quit{false};
 void incrementUsage()
 {
     std::unique_lock<std::mutex> lock(mtx);
-    while(true) {
+    while(!quit.load()) {
         if (data.water == Util::ON) {
             data.litres += 1;
         }
@@ -100,7 +100,10 @@ int main()
      ***************/
     CROW_ROUTE(app, "/api/water") ([](){
         json response_body;
-        response_body["water"] = data.litres;
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+            response_body["water"] = data.litres;
+        }
 
         crow::response res(response_body.dump());
 
@@ -205,10 +208,12 @@ int main()
         app.port(4226).multithreaded().run();
     };
     std::thread asyncThread(incrementUsage);
-    std::thread serverThread(startServer);
+    auto res = app.port(4226).multithreaded().run_async();
+//    std::thread serverThread(startServer);
 
-    serverThread.join();
+  //  serverThread.join();
+    res.wait();
+    quit.store(true);
     asyncThread.join();
-
     return 0;
 }

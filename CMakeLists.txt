@@ -15,9 +15,18 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(crowcpp-crow)
 
-add_executable(resurse-naturale-server  main.cpp)
+FetchContent_Declare(
+  nlohmann_json
+  GIT_REPOSITORY https://github.com/nlohmann/json.git
+  GIT_TAG v3.11.2
+)
+FetchContent_MakeAvailable(nlohmann_json)
+
+add_executable(resurse-naturale-server  main.cpp
+    serverhandler.h serverhandler.cpp)
 
 target_link_libraries(resurse-naturale-server PRIVATE Crow)
+target_include_directories(resurse-naturale-server PRIVATE ${nlohmann_json_SOURCE_DIR}/include)
 
 include(GNUInstallDirs)
 install(TARGETS resurse-naturale-server

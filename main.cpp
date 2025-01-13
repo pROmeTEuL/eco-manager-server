@@ -15,12 +15,11 @@ using string = std::string;
 enum class Util {
     ON,
     OFF,
-    UNKNOWN,
-    CONNECTED
+    UNKNOWN
 };
 
 struct Data {
-    Util water = Util::CONNECTED;
+    Util water = Util::ON;
     Util electricity = Util::ON;
     Util heat = Util::ON;
     int litres = 0;
@@ -31,8 +30,6 @@ struct Data {
 string status(Util util)
 {
     switch (util) {
-    case Util::CONNECTED:
-        return "connected";
     case Util::OFF:
         return "off";
     case Util::ON:
@@ -52,10 +49,6 @@ void change(Util &util, const char* status)
         util = Util::OFF;
         return;
     }
-    if (strcmp(status, "connected") == 0) {
-        util = Util::CONNECTED;
-        return;
-    }
     util = Util::UNKNOWN;
 }
 
@@ -65,7 +58,7 @@ void incrementUsage()
 {
     std::unique_lock<std::mutex> lock(mtx);
     while(true) {
-        if (data.water == Util::CONNECTED) {
+        if (data.water == Util::ON) {
             data.litres += 1;
         }
         if (data.heat == Util::ON) {
@@ -212,14 +205,9 @@ int main()
         app.port(4226).multithreaded().run();
     };
     std::thread asyncThread(incrementUsage);
-
-    // Start the server in a separate thread asynchronously
     std::thread serverThread(startServer);
 
-    // Wait for the server to finish (i.e., the server is running indefinitely)
     serverThread.join();
-
-    // Wait for the async background thread to finish
     asyncThread.join();
 
     return 0;

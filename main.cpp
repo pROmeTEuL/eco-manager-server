@@ -62,8 +62,8 @@ std::mutex mtx;
 
 void incrementUsage()
 {
+    std::unique_lock<std::mutex> lock(mtx);
     while(true) {
-        std::lock_guard<std::mutex> lock(mtx);
         if (data.water == Util::CONNECTED) {
             data.litres += 1;
         }
@@ -73,7 +73,10 @@ void incrementUsage()
         if (data.electricity == Util::ON) {
             data.kilowatz += 1;
         }
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        printf("%d l\n%d mc\n%d kw\n", data.litres, data.mc, data.kilowatz);
+        lock.unlock();
+        std::this_thread::sleep_for(std::chrono::seconds(3));
+        lock.lock();
     }
 }
 
@@ -103,7 +106,7 @@ int main()
      ***************/
     CROW_ROUTE(app, "/api/water") ([](){
         json response_body;
-        response_body["water"] = status(data.water);
+        response_body["water"] = data.litres;
 
         crow::response res(response_body.dump());
 
@@ -138,7 +141,7 @@ int main()
 
     CROW_ROUTE(app, "/api/heat") ([](){
         json response_body;
-        response_body["heat"] = status(data.heat);
+        response_body["heat"] = data.mc;
 
         crow::response res(response_body.dump());
 
@@ -173,7 +176,7 @@ int main()
 
     CROW_ROUTE(app, "/api/electricity") ([](){
         json response_body;
-        response_body["electricity"] = status(data.electricity);
+        response_body["electricity"] = data.kilowatz;
 
         crow::response res(response_body.dump());
 
@@ -204,12 +207,19 @@ int main()
         return res;
     });
 
-
-    app.port(4226).multithreaded().run();
-
+    auto startServer = [&](){
+        app.port(4226).multithreaded().run();
+    };
     std::thread asyncThread(incrementUsage);
-    asyncThread.join();
 
+    // Start the server in a separate thread asynchronously
+    std::thread serverThread(startServer);
+
+    // Wait for the server to finish (i.e., the server is running indefinitely)
+    serverThread.join();
+
+    // Wait for the async background thread to finish
+    asyncThread.join();
 
     return 0;
 }

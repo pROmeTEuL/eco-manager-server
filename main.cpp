@@ -6,6 +6,7 @@
 #include <chrono>
 
 #include "crow.h"
+#include "crow/middlewares/cors.h"
 #include "nlohmann/json.hpp"
 
 using json = nlohmann::json;
@@ -19,9 +20,9 @@ enum class Util {
 };
 
 struct Data {
-    Util water = Util::UNKNOWN;
-    Util electricity = Util::UNKNOWN;
-    Util heat = Util::UNKNOWN;
+    Util water = Util::CONNECTED;
+    Util electricity = Util::ON;
+    Util heat = Util::ON;
     int litres = 0;
     int kilowatz = 0;
     int mc = 0;
@@ -51,7 +52,7 @@ void change(Util &util, const char* status)
         util = Util::OFF;
         return;
     }
-    if (strcmp(status, "connceted") == 0) {
+    if (strcmp(status, "connected") == 0) {
         util = Util::CONNECTED;
         return;
     }
@@ -82,7 +83,7 @@ void incrementUsage()
 
 int main()
 {
-    crow::SimpleApp app;
+    crow::App<crow::CORSHandler> app;
 
     /****************
      *****SYSTEM*****

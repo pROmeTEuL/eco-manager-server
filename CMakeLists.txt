@@ -23,7 +23,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(nlohmann_json)
 
 add_executable(resurse-naturale-server  main.cpp
-    serverhandler.h serverhandler.cpp)
+)
 
 target_link_libraries(resurse-naturale-server PRIVATE Crow)
 target_include_directories(resurse-naturale-server PRIVATE ${nlohmann_json_SOURCE_DIR}/include)

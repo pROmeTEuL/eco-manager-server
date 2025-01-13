@@ -1,7 +1,12 @@
-#include "crow.h"
-#include "nlohmann/json.hpp"
+#include <stdio.h>
 #include <string>
 #include <string.h>
+#include <thread>
+#include <mutex>
+#include <chrono>
+
+#include "crow.h"
+#include "nlohmann/json.hpp"
 
 using json = nlohmann::json;
 using string = std::string;
@@ -17,6 +22,9 @@ struct Data {
     Util water = Util::UNKNOWN;
     Util electricity = Util::UNKNOWN;
     Util heat = Util::UNKNOWN;
+    int litres = 0;
+    int kilowatz = 0;
+    int mc = 0;
 } data;
 
 string status(Util util)
@@ -48,6 +56,25 @@ void change(Util &util, const char* status)
         return;
     }
     util = Util::UNKNOWN;
+}
+
+std::mutex mtx;
+
+void incrementUsage()
+{
+    while(true) {
+        std::lock_guard<std::mutex> lock(mtx);
+        if (data.water == Util::CONNECTED) {
+            data.litres += 1;
+        }
+        if (data.heat == Util::ON) {
+            data.mc += 1;
+        }
+        if (data.electricity == Util::ON) {
+            data.kilowatz += 1;
+        }
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
 }
 
 int main()
@@ -91,6 +118,7 @@ int main()
         string req_text = request_body.contains("value") ? request_body["value"].get<string>() : "";
 
         if (!req_text.empty()) {
+            std::lock_guard<std::mutex> lock(mtx);
             change(data.water, req_text.c_str());
             crow::response res;
             res.set_header("Server", "Crow/1.0");
@@ -125,6 +153,7 @@ int main()
         string req_text = request_body.contains("value") ? request_body["value"].get<string>() : "";
 
         if (!req_text.empty()) {
+            std::lock_guard<std::mutex> lock(mtx);
             change(data.heat, req_text.c_str());
             crow::response res;
             res.set_header("Server", "Crow/1.0");
@@ -161,6 +190,7 @@ int main()
         string req_text = request_body.contains("value") ? request_body["value"].get<string>() : "";
 
         if (!req_text.empty()) {
+            std::lock_guard<std::mutex> lock(mtx);
             change(data.electricity, req_text.c_str());
             crow::response res;
             res.set_header("Server", "Crow/1.0");
@@ -174,6 +204,12 @@ int main()
         return res;
     });
 
+
     app.port(4226).multithreaded().run();
+
+    std::thread asyncThread(incrementUsage);
+    asyncThread.join();
+
+
     return 0;
 }
